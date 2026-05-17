@@ -882,6 +882,84 @@ ul { list-style: none; }
 
 /* hidden canvas for capture */
 #camCanvas { display: none; }
+
+/* ============================================================
+   API KEY BAR
+   ============================================================ */
+.api-key-bar {
+  background: rgba(244,161,74,0.05);
+  border: 1px solid var(--border-a);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.5rem;
+}
+.api-key-row {
+  display: flex; align-items: center; gap: 0.9rem;
+}
+.api-key-icon { font-size: 1.2rem; flex-shrink: 0; }
+.api-key-field-wrap { flex: 1; min-width: 0; }
+.api-key-label {
+  display: block; font-size: 0.68rem; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem;
+}
+.api-key-input {
+  width: 100%; background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.55rem 0.8rem; color: var(--text-1);
+  font-family: 'DM Sans', monospace; font-size: 0.82rem;
+  outline: none; transition: border-color 0.3s;
+}
+.api-key-input:focus { border-color: var(--border-a); }
+.api-key-input.valid { border-color: #4caf7d; }
+.api-key-save {
+  padding: 0.55rem 1.1rem; font-size: 0.8rem; flex-shrink: 0;
+}
+.api-key-save:disabled { opacity: 0.4; cursor: not-allowed; }
+.api-key-hint {
+  font-size: 0.75rem; color: var(--text-3); margin-top: 0.65rem;
+}
+.api-key-link { color: var(--amber-soft); text-decoration: underline; text-underline-offset: 2px; }
+.api-key-status {
+  font-size: 0.76rem; margin-top: 0.45rem; min-height: 1.1em;
+  transition: color 0.3s;
+}
+.api-key-status.ok  { color: #4caf7d; }
+.api-key-status.err { color: #c0504d; }
+.api-key-status.loading { color: var(--amber-soft); }
+
+/* AI result overrides for dynamic content */
+.rc-ai-insight {
+  font-size: 0.78rem; color: var(--text-2); line-height: 1.65;
+  margin-top: 0.7rem; padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+.report-card.ai-powered::before { opacity: 1; }
+
+/* Gemini badge */
+.gemini-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.68rem; color: #8ab4f8;
+  border: 1px solid rgba(138,180,248,0.25); border-radius: 99px;
+  padding: 0.2rem 0.6rem; background: rgba(138,180,248,0.08);
+  margin-left: 0.6rem; vertical-align: middle;
+}
+.gemini-badge::before { content: '✦'; font-size: 0.6rem; }
+
+/* AI full insight card */
+.ai-insight-card {
+  background: linear-gradient(135deg, rgba(138,180,248,0.07), rgba(244,161,74,0.05));
+  border: 1px solid rgba(138,180,248,0.2);
+  border-radius: var(--r-lg); padding: 1.8rem;
+  margin-top: 1.5rem; grid-column: 1/-1;
+}
+.ai-insight-title {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: #8ab4f8; margin-bottom: 0.8rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.ai-insight-text {
+  font-size: 0.88rem; color: var(--text-2); line-height: 1.8;
+}
 </style>
 </head>
 <body>
@@ -981,6 +1059,26 @@ ul { list-style: none; }
     </div>
 
     <div class="scan-box reveal delay-1">
+
+      <!-- API Key Input -->
+      <div class="api-key-bar" id="apiKeyBar">
+        <div class="api-key-row">
+          <div class="api-key-icon">🔑</div>
+          <div class="api-key-field-wrap">
+            <label class="api-key-label">Gemini API Key</label>
+            <input type="password" id="geminiApiKey" class="api-key-input"
+              placeholder="AIza••••••••••••••••••••••••••••••••••••••"
+              oninput="onApiKeyInput()" />
+          </div>
+          <button class="api-key-save btn btn-primary" onclick="saveApiKey()" id="apiKeySaveBtn" disabled>Save</button>
+        </div>
+        <div class="api-key-hint">
+          Real skin analysis via <strong>Gemini Vision</strong> ·
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="api-key-link">Get a free key →</a>
+        </div>
+        <div class="api-key-status" id="apiKeyStatus"></div>
+      </div>
+
       <!-- Upload Zone -->
       <div class="upload-zone" id="uploadZone"
            ondragover="handleDrag(event)"
@@ -1050,61 +1148,72 @@ ul { list-style: none; }
       <div class="report-card reveal delay-1">
         <div class="rc-icon">🧬</div>
         <div class="rc-label">Skin Type</div>
-        <div class="rc-value">Combination</div>
-        <div class="rc-desc">Oily T-zone with dry cheeks. Needs balanced care.</div>
+        <div class="rc-value" id="rcSkinType">Combination</div>
+        <div class="rc-desc" id="rcSkinTypeDesc">Oily T-zone with dry cheeks. Needs balanced care.</div>
       </div>
 
       <div class="report-card reveal delay-2">
         <div class="rc-icon">🌊</div>
         <div class="rc-label">Hydration Level</div>
-        <div class="rc-value">72%</div>
+        <div class="rc-value" id="rcHydration">72%</div>
         <div class="rc-bar-wrap">
           <div class="rc-bar-label"><span>Dry</span><span>Optimal</span></div>
-          <div class="rc-bar"><div class="rc-bar-fill blue" data-width="72"></div></div>
+          <div class="rc-bar"><div class="rc-bar-fill blue" id="rcHydrationBar" data-width="72"></div></div>
         </div>
       </div>
 
       <div class="report-card glow-score-card reveal delay-3">
         <div class="rc-label">Glow Score</div>
-        <div class="glow-num">8.4</div>
-        <div class="rc-desc">Above average luminosity. You're glowing!</div>
+        <div class="glow-num" id="rcGlowScore">8.4</div>
+        <div class="rc-desc" id="rcGlowDesc">Above average luminosity. You're glowing!</div>
       </div>
 
       <div class="report-card span-2 reveal delay-1">
         <div class="rc-icon">🔍</div>
         <div class="rc-label">Acne Level</div>
-        <div class="rc-value" style="color:#c0504d;">Mild</div>
+        <div class="rc-value" id="rcAcne" style="color:#c0504d;">Mild</div>
         <div class="rc-bar-wrap">
           <div class="rc-bar-label"><span>Clear</span><span>Severe</span></div>
-          <div class="rc-bar"><div class="rc-bar-fill red" data-width="28"></div></div>
+          <div class="rc-bar"><div class="rc-bar-fill red" id="rcAcneBar" data-width="28"></div></div>
         </div>
-        <div class="rc-desc" style="margin-top:0.8rem;">2-3 active spots detected near chin and forehead. Manageable with targeted treatment.</div>
+        <div class="rc-desc" id="rcAcneDesc" style="margin-top:0.8rem;">2-3 active spots detected near chin and forehead. Manageable with targeted treatment.</div>
       </div>
 
       <div class="report-card reveal delay-2">
         <div class="rc-icon">☀️</div>
         <div class="rc-label">Sun Damage</div>
-        <div class="rc-value">Low</div>
+        <div class="rc-value" id="rcSunDamage">Low</div>
         <div class="rc-bar-wrap">
           <div class="rc-bar-label"><span>None</span><span>High</span></div>
-          <div class="rc-bar"><div class="rc-bar-fill green" data-width="18"></div></div>
+          <div class="rc-bar"><div class="rc-bar-fill green" id="rcSunBar" data-width="18"></div></div>
         </div>
       </div>
 
       <div class="report-card reveal delay-1">
         <div class="rc-icon">🎯</div>
         <div class="rc-label">Pore Visibility</div>
-        <div class="rc-value">Medium</div>
+        <div class="rc-value" id="rcPores">Medium</div>
         <div class="rc-bar-wrap">
-          <div class="rc-bar"><div class="rc-bar-fill" data-width="52"></div></div>
+          <div class="rc-bar"><div class="rc-bar-fill" id="rcPoresBar" data-width="52"></div></div>
         </div>
       </div>
 
       <div class="report-card span-2 reveal delay-2">
         <div class="rc-icon">✨</div>
         <div class="rc-label">Skin Age vs Actual</div>
-        <div class="rc-value" style="color:#4caf7d;">2 yrs younger</div>
-        <div class="rc-desc">Your skin appears 2 years younger than your biological age. Excellent anti-aging indicators.</div>
+        <div class="rc-value" id="rcSkinAge" style="color:#4caf7d;">2 yrs younger</div>
+        <div class="rc-desc" id="rcSkinAgeDesc">Your skin appears 2 years younger than your biological age. Excellent anti-aging indicators.</div>
+      </div>
+
+      <!-- Gemini full AI insight (shown when API key is set) -->
+      <div class="ai-insight-card" id="aiInsightCard" style="display:none;">
+        <div class="ai-insight-title">
+          <span>✦</span> Gemini Vision Analysis
+          <span class="gemini-badge">Real AI</span>
+        </div>
+        <div class="ai-insight-text" id="aiInsightText">
+          Analyzing your skin with Gemini Vision...
+        </div>
       </div>
 
     </div>
