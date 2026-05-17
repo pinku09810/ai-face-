@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SkinIQ AI — AI-Powered Skin Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg:         #0a0a0b;
+  --surface:    #111114;
+  --glass:      rgba(255,255,255,0.04);
+  --glass-b:    rgba(255,255,255,0.09);
+  --amber:      #f4a14a;
+  --amber-soft: #f7b96a;
+  --amber-dim:  rgba(244,161,74,0.15);
+  --amber-glow: rgba(244,161,74,0.35);
+  --cream:      #fdf5ec;
+  --text-1:     #f0ece6;
+  --text-2:     #9e9891;
+  --text-3:     #5e5a55;
+  --border:     rgba(255,255,255,0.07);
+  --border-a:   rgba(244,161,74,0.25);
+  --r:          1.2rem;
+  --r-lg:       2rem;
+  --transition: 0.45s cubic-bezier(0.16,1,0.3,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+img { display: block; max-width: 100%; }
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+.container { max-width: 1160px; margin: 0 auto; padding: 0 1.5rem; }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--amber);
+  border: 1px solid var(--border-a); border-radius: 100px;
+  padding: 0.4rem 0.9rem; background: var(--amber-dim);
+}
+.tag::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--amber); animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes pulse-dot {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%{ opacity:0.5; transform:scale(0.7); }
+}
+
+.section-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.section-label em { font-style: italic; color: var(--amber-soft); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.85rem 2rem; border-radius: 100px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; border: none; transition: var(--transition);
+  position: relative; overflow: hidden; white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--amber);
+  color: #0a0a0b;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px var(--amber-glow); }
+.btn-primary:hover::after { opacity: 1; }
+
+.btn-ghost {
+  background: var(--glass-b);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.btn-ghost:hover { border-color: var(--border-a); color: var(--amber-soft); transform: translateY(-2px); }
+
+/* ============================================================
+   SCROLL REVEAL
+   ============================================================ */
+.reveal {
+  opacity: 0; transform: translateY(36px);
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity: 1; transform: none; }
+.reveal.delay-1 { transition-delay: 0.1s; }
+.reveal.delay-2 { transition-delay: 0.2s; }
+.reveal.delay-3 { transition-delay: 0.3s; }
+.reveal.delay-4 { transition-delay: 0.4s; }
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  padding: 1.2rem 0;
+  transition: background 0.4s, backdrop-filter 0.4s, border-color 0.4s;
+  border-bottom: 1px solid transparent;
+}
+.nav.scrolled {
+  background: rgba(10,10,11,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom-color: var(--border);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.55rem; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+.logo span { color: var(--amber); }
+.nav-links { display: flex; gap: 2.2rem; align-items: center; }
+.nav-links a {
+  font-size: 0.85rem; color: var(--text-2);
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--text-1); }
+.nav-cta { display: flex; gap: 0.8rem; align-items: center; }
+.nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+.nav-hamburger span { display: block; width: 24px; height: 1.5px; background: var(--text-1); transition: 0.3s; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 8rem 0 5rem;
+  position: relative; overflow: hidden;
+}
+
+/* mesh background */
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 60% 30%, rgba(244,161,74,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 80%, rgba(244,161,74,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* subtle grid */
+.hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 80%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4rem; align-items: center;
+}
+
+.hero-tag { margin-bottom: 1.5rem; }
+
+.hero-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 300; line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+.hero-heading em { font-style: italic; color: var(--amber-soft); }
+.hero-heading strong { font-weight: 600; }
+
+.hero-sub {
+  font-size: 1.05rem; color: var(--text-2);
+  max-width: 440px; line-height: 1.75;
+  margin-bottom: 2.5rem;
+}
+
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+.hero-stats {
+  display: flex; gap: 2.5rem; margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 600; color: var(--amber-soft);
+  line-height: 1;
+}
+.hero-stat-label { font-size: 0.78rem; color: var(--text-3); margin-top: 0.3rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* hero visual */
+.hero-visual {
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+
+.hero-orb {
+  width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(244,161,74,0.22), rgba(244,161,74,0.04) 60%, transparent);
+  border: 1px solid var(--border-a);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  animation: float 6s ease-in-out infinite;
+}
+.hero-orb::before {
+  content: ''; position: absolute; inset: -1px;
+  border-radius: 50%; border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(244,161,74,0.4), transparent 50%) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out; mask-composite: exclude;
+}
+
+.hero-face-ring {
+  width: 300px; height: 300px; border-radius: 50%;
+  border: 1px dashed rgba(244,161,74,0.3);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  animation: spin-slow 20s linear infinite;
+}
+.hero-face-ring::before {
+  content: ''; position: absolute; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--amber);
+  top: 0; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 0 12px var(--amber);
+}
+
+.hero-face-inner {
+  width: 220px; height: 220px; border-radius: 50%;
+  background: linear-gradient(145deg, #1a1710, #0f0d0b);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 5rem;
+  animation: spin-slow-rev 20s linear infinite;
+  position: relative; overflow: hidden;
+}
+.hero-face-inner::after {
+  content: '';
+  position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(244,161,74,0.12), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.hero-float-card {
+  position: absolute; background: var(--glass-b); backdrop-filter: blur(20px);
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 0.9rem 1.2rem; font-size: 0.8rem;
+  animation: float 4s ease-in-out infinite;
+}
+.hero-float-card:nth-child(3) { top: 10%; right: -20px; animation-delay: -1s; }
+.hero-float-card:nth-child(4) { bottom: 15%; left: -30px; animation-delay: -2.5s; }
+
+.hfc-label { color: var(--text-3); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.hfc-val { color: var(--amber-soft); font-weight: 600; font-size: 1rem; margin-top: 0.15rem; }
+.hfc-bar { width: 100px; height: 3px; background: var(--border); border-radius: 99px; margin-top: 0.5rem; overflow: hidden; }
+.hfc-fill { height: 100%; background: linear-gradient(90deg, var(--amber), var(--amber-soft)); border-radius: 99px; }
+
+@keyframes float {
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-12px); }
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes spin-slow-rev { to { transform: rotate(-360deg); } }
+@keyframes shimmer {
+  0%{ left:-100%; }
+  100%{ left:200%; }
+}
+
+/* ============================================================
+   SCAN SECTION
+   ============================================================ */
+.scan-section { padding: 8rem 0; position: relative; }
+
+.scan-section::before {
+  content: '';
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,161,74,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.scan-header { text-align: center; max-width: 580px; margin: 0 auto 3.5rem; }
+.scan-header .tag { margin-bottom: 1.2rem; }
+.scan-header p { color: var(--text-2); margin-top: 1rem; font-size: 1rem; }
+
+.scan-box {
+  max-width: 540px; margin: 0 auto;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 2.5rem;
+  backdrop-filter: blur(24px);
+  position: relative; overflow: hidden;
+}
+.scan-box::before {
+  content:''; position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(244,161,74,0.2), transparent 50%, rgba(244,161,74,0.1));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out; mask-composite: exclude;
+  pointer-events: none;
+}
+
+.upload-zone {
+  border: 1.5px dashed var(--border-a);
+  border-radius: var(--r);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative; overflow: hidden;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+}
+.upload-icon { font-size: 2.8rem; margin-bottom: 1rem; }
+.upload-title { font-size: 1rem; font-weight: 500; margin-bottom: 0.4rem; }
+.upload-sub { font-size: 0.82rem; color: var(--text-3); }
+.upload-input { display: none; }
+
+.upload-preview {
+  display: none;
+  position: relative; border-radius: var(--r); overflow: hidden;
+}
+.upload-preview img {
+  width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--r);
+}
+
+/* scan line animation */
+.scan-line {
+  position: absolute; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 18px var(--amber-glow);
+  display: none;
+  animation: scan-move 2s ease-in-out infinite;
+}
+@keyframes scan-move {
+  0%{ top: 0%; } 100%{ top: 100%; }
+}
+
+.scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.scan-corners::before, .scan-corners::after {
+  content: '';
+  position: absolute; width: 24px; height: 24px;
+  border-color: var(--amber); border-style: solid;
+}
+.scan-corners::before { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+.scan-corners::after { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+.scan-corners-br::before { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+.scan-corners-br::after { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+
+.scan-btn {
+  margin-top: 1.5rem; width: 100%;
+  justify-content: center;
+  display: flex;
+  font-size: 1rem; padding: 1rem;
+}
+
+/* progress */
+.scan-progress { display: none; margin-top: 1.5rem; }
+.scan-progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; color: var(--text-2); margin-bottom: 0.6rem;
+}
+.scan-progress-bar {
+  height: 4px; background: var(--border); border-radius: 99px; overflow: hidden;
+}
+.scan-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--amber-soft));
+  border-radius: 99px; width: 0%;
+  transition: width 0.15s linear;
+}
+.scan-steps {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  margin-top: 1rem;
+}
+.scan-step {
+  display: flex; align-items: center; gap: 0.7rem;
+  font-size: 0.82rem; color: var(--text-3);
+  transition: color 0.3s;
+}
+.scan-step.active { color: var(--amber-soft); }
+.scan-step.done { color: var(--text-2); }
+.step-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0; transition: background 0.3s;
+}
+.scan-step.active .step-dot { background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); animation: pulse-dot 1s infinite; }
+.scan-step.done .step-dot { background: #4caf7d; }
+
+/* ============================================================
+   REPORT SECTION
+   ============================================================ */
+.report-section {
+  display: none; padding: 5rem 0; position: relative;
+}
+.report-section.visible-section { display: block; }
+
+.report-header { text-align: center; margin-bottom: 3rem; }
+.report-header .tag { margin-bottom: 1rem; }
+
+.report-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem; max-width: 900px; margin: 0 auto;
+}
+
+.report-card {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.8rem;
+  backdrop-filter: blur(20px);
+  transition: var(--transition); cursor: default;
+  position: relative; overflow: hidden;
+}
+.report-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber-soft), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.report-card:hover { border-color: var(--border-a); transform: translateY(-4px); }
+.report-card:hover::before { opacity: 1; }
+.report-card.span-2 { grid-column: span 2; }
+
+.rc-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+.rc-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-3); margin-bottom: 0.4rem;
+}
+.rc-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.9rem; font-weight: 600; color: var(--amber-soft);
+  line-height: 1;
+}
+.rc-desc { font-size: 0.8rem; color: var(--text-2); margin-top: 0.5rem; }
+
+.rc-bar-wrap { margin-top: 1.2rem; }
+.rc-bar-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-3); margin-bottom: 0.4rem; }
+.rc-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.rc-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--amber), var(--amber-soft));
+  width: 0%; transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+}
+.rc-bar-fill.green { background: linear-gradient(90deg,#2e7d52,#4caf7d); }
+.rc-bar-fill.red { background: linear-gradient(90deg,#7d2e2e,#c0504d); }
+.rc-bar-fill.blue { background: linear-gradient(90deg,#2e4a7d,#4a7dc0); }
+
+/* glow score special card */
+.glow-score-card {
+  background: linear-gradient(135deg, rgba(244,161,74,0.12), rgba(244,161,74,0.04));
+  border-color: var(--border-a);
+}
+.glow-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 4.5rem; font-weight: 600; line-height: 1;
+  background: linear-gradient(135deg, var(--amber), var(--amber-soft));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   PRODUCTS SECTION
+   ============================================================ */
+.products-section { padding: 8rem 0; }
+.products-header { text-align: center; max-width: 560px; margin: 0 auto 4rem; }
+.products-header .tag { margin-bottom: 1rem; }
+.products-header p { color: var(--text-2); margin-top: 1rem; }
+
+.products-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.product-card {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  transition: var(--transition); cursor: pointer;
+  position: relative; group: true;
+}
+.product-card:hover { border-color: var(--border-a); transform: translateY(-8px); box-shadow: 0 32px 64px rgba(0,0,0,0.4); }
+
+.product-img {
+  height: 200px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 5rem;
+  position: relative; overflow: hidden;
+}
+.product-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(10,10,11,0.8));
+}
+
+.product-img-1 { background: linear-gradient(135deg,#1a1508,#2e2010); }
+.product-img-2 { background: linear-gradient(135deg,#08131a,#102030); }
+.product-img-3 { background: linear-gradient(135deg,#0f1a0f,#1a2e1a); }
+.product-img-4 { background: linear-gradient(135deg,#1a0f1a,#2e1a35); }
+
+.product-badge {
+  position: absolute; top: 1rem; left: 1rem; z-index: 2;
+  background: var(--amber); color: #0a0a0b;
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em;
+  padding: 0.25rem 0.65rem; border-radius: 99px; text-transform: uppercase;
+}
+
+.product-body { padding: 1.4rem; }
+.product-name { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+.product-desc { font-size: 0.8rem; color: var(--text-2); margin-bottom: 1rem; line-height: 1.6; }
+
+.product-benefits { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.2rem; }
+.benefit-pill {
+  font-size: 0.68rem; color: var(--amber-soft);
+  border: 1px solid var(--border-a);
+  border-radius: 99px; padding: 0.2rem 0.6rem;
+  background: var(--amber-dim);
+}
+
+.product-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border); padding-top: 1rem;
+}
+.product-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem; font-weight: 600; color: var(--amber-soft);
+}
+.product-buy {
+  padding: 0.55rem 1.2rem; border-radius: 99px;
+  background: var(--amber); color: #0a0a0b;
+  font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; border: none;
+  transition: var(--transition);
+}
+.product-buy:hover { box-shadow: 0 8px 24px var(--amber-glow); transform: scale(1.05); }
+
+/* ============================================================
+   WHY CHOOSE US
+   ============================================================ */
+.why-section { padding: 8rem 0; }
+.why-header { text-align: center; max-width: 540px; margin: 0 auto 4rem; }
+.why-header .tag { margin-bottom: 1rem; }
+
+.why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+
+.why-card {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 2.2rem;
+  transition: var(--transition); position: relative; overflow: hidden;
+}
+.why-card::after {
+  content: ''; position: absolute;
+  bottom: -60px; right: -60px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,161,74,0.12), transparent);
+  transition: var(--transition);
+}
+.why-card:hover { border-color: var(--border-a); transform: translateY(-6px); }
+.why-card:hover::after { transform: scale(1.4); }
+
+.why-icon {
+  width: 52px; height: 52px; border-radius: var(--r);
+  background: var(--amber-dim); border: 1px solid var(--border-a);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin-bottom: 1.4rem;
+}
+.why-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.7rem; }
+.why-desc { font-size: 0.85rem; color: var(--text-2); line-height: 1.7; }
+
+/* ============================================================
+   TESTIMONIALS
+   ============================================================ */
+.testi-section { padding: 8rem 0; }
+.testi-header { text-align: center; max-width: 520px; margin: 0 auto 4rem; }
+.testi-header .tag { margin-bottom: 1rem; }
+
+.testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+
+.testi-card {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 2rem;
+  transition: var(--transition);
+}
+.testi-card:hover { border-color: var(--border-a); transform: translateY(-4px); }
+
+.testi-stars { display: flex; gap: 0.25rem; font-size: 0.9rem; margin-bottom: 1rem; }
+.testi-text { font-size: 0.9rem; color: var(--text-2); line-height: 1.75; font-style: italic; margin-bottom: 1.4rem; }
+
+.testi-user { display: flex; align-items: center; gap: 0.9rem; }
+.testi-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; border: 1px solid var(--border);
+}
+.testi-name { font-size: 0.88rem; font-weight: 600; }
+.testi-meta { font-size: 0.75rem; color: var(--text-3); }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 4rem 0 2.5rem;
+}
+.footer-inner {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem; margin-bottom: 3rem;
+}
+.footer-brand .logo { margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.85rem; color: var(--text-3); line-height: 1.7; max-width: 260px; }
+.footer-socials { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+.social-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--glass-b); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; transition: var(--transition); cursor: pointer;
+}
+.social-btn:hover { border-color: var(--border-a); color: var(--amber-soft); transform: translateY(-2px); }
+
+.footer-col-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 1.2rem; }
+.footer-col a { display: block; font-size: 0.85rem; color: var(--text-2); margin-bottom: 0.7rem; transition: color 0.3s; }
+.footer-col a:hover { color: var(--amber-soft); }
+
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border); padding-top: 2rem;
+  font-size: 0.78rem; color: var(--text-3);
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .hero-sub { max-width: 100%; }
+  .hero-btns { justify-content: center; }
+  .hero-stats { justify-content: center; }
+  .hero-visual { display: none; }
+  .nav-links { display: none; }
+  .nav-hamburger { display: flex; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-grid { grid-template-columns: 1fr; }
+  .testi-grid { grid-template-columns: 1fr; }
+  .report-grid { grid-template-columns: 1fr 1fr; }
+  .report-card.span-2 { grid-column: span 1; }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+}
+@media (max-width: 600px) {
+  .products-grid { grid-template-columns: 1fr; }
+  .report-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .hero-orb { width: 260px; height: 260px; }
+}
+
+/* ============================================================
+   CAMERA MODAL
+   ============================================================ */
+.cam-modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(5,5,6,0.92);
+  backdrop-filter: blur(18px);
+  align-items: center; justify-content: center;
+}
+.cam-modal-overlay.open { display: flex; }
+
+.cam-modal {
+  width: min(520px, 96vw);
+  background: #0f0f12;
+  border: 1px solid var(--border-a);
+  border-radius: calc(var(--r-lg) * 1.2);
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(244,161,74,0.08);
+  animation: cam-in 0.45s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes cam-in {
+  from { opacity:0; transform: scale(0.92) translateY(24px); }
+  to   { opacity:1; transform: none; }
+}
+
+.cam-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.cam-title { font-size: 0.95rem; font-weight: 600; }
+.cam-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--glass-b); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1rem; transition: var(--transition);
+  color: var(--text-2);
+}
+.cam-close:hover { border-color: var(--border-a); color: var(--text-1); }
+
+.cam-viewport {
+  position: relative; width: 100%; aspect-ratio: 4/3;
+  background: #000; overflow: hidden;
+}
+
+#camVideo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror effect */
+  display: block;
+}
+
+/* face oval guide */
+.cam-face-guide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.cam-oval {
+  width: 48%; aspect-ratio: 3/4;
+  border: 2px solid rgba(244,161,74,0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.35), inset 0 0 30px rgba(244,161,74,0.05);
+  animation: oval-pulse 2.5s ease-in-out infinite;
+}
+@keyframes oval-pulse {
+  0%,100%{ border-color: rgba(244,161,74,0.5); box-shadow: 0 0 0 9999px rgba(0,0,0,0.35), 0 0 0 0 rgba(244,161,74,0); }
+  50%{ border-color: rgba(244,161,74,0.9); box-shadow: 0 0 0 9999px rgba(0,0,0,0.35), 0 0 24px 4px rgba(244,161,74,0.2); }
+}
+
+/* corner brackets */
+.cam-corners-wrap {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.cam-corner {
+  position: absolute; width: 22px; height: 22px;
+  border-color: var(--amber); border-style: solid;
+}
+.cam-corner.tl { top:12px; left:12px; border-width:2px 0 0 2px; }
+.cam-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
+.cam-corner.bl { bottom:12px; left:12px; border-width:0 0 2px 2px; }
+.cam-corner.br { bottom:12px; right:12px; border-width:0 2px 2px 0; }
+
+/* scanning line over camera */
+.cam-scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 14px var(--amber-glow);
+  display: none;
+  animation: cam-scan 1.8s ease-in-out infinite;
+  top: 0;
+}
+@keyframes cam-scan {
+  0%  { top: 5%; }
+  100%{ top: 95%; }
+}
+
+/* countdown overlay */
+.cam-countdown {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.45);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 6rem; font-weight: 600;
+  color: var(--amber);
+  text-shadow: 0 0 40px var(--amber-glow);
+  animation: count-pop 1s ease-in-out;
+}
+@keyframes count-pop {
+  0%{ transform:scale(1.6); opacity:0; }
+  30%{ transform:scale(1); opacity:1; }
+  80%{ opacity:1; }
+  100%{ opacity:0.6; }
+}
+
+/* flash effect */
+.cam-flash {
+  position: absolute; inset: 0;
+  background: white; opacity: 0; pointer-events: none;
+  transition: opacity 0.05s;
+}
+.cam-flash.flash { opacity: 0.85; }
+
+/* tip bar */
+.cam-tip {
+  padding: 0.65rem 1.5rem;
+  font-size: 0.78rem; color: var(--text-3); text-align: center;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid var(--border);
+  min-height: 2.4rem;
+  transition: color 0.3s;
+}
+.cam-tip.good { color: #4caf7d; }
+.cam-tip.warn { color: var(--amber-soft); }
+
+/* controls */
+.cam-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.4rem 2rem;
+  gap: 1rem;
+}
+
+.cam-btn-flip {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--glass-b); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.2rem; transition: var(--transition);
+  color: var(--text-2);
+}
+.cam-btn-flip:hover { border-color: var(--border-a); color: var(--amber-soft); transform: rotate(45deg); }
+
+.cam-capture-ring {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid var(--amber);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+  flex-shrink: 0;
+}
+.cam-capture-ring:hover { box-shadow: 0 0 24px var(--amber-glow); transform: scale(1.06); }
+.cam-capture-dot {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--amber);
+  transition: var(--transition);
+}
+.cam-capture-ring:hover .cam-capture-dot { background: var(--amber-soft); }
+.cam-capture-ring:active .cam-capture-dot { transform: scale(0.88); }
+
+.cam-btn-timer {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--glass-b); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.72rem; font-weight: 600;
+  transition: var(--transition); color: var(--text-2);
+  flex-direction: column; gap: 1px;
+}
+.cam-btn-timer:hover { border-color: var(--border-a); color: var(--amber-soft); }
+.cam-btn-timer.active { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+.cam-btn-timer span { font-size: 0.6rem; }
+
+/* permission error */
+.cam-error {
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  height: 220px; gap: 1rem; padding: 2rem; text-align: center;
+}
+.cam-error-icon { font-size: 2.5rem; }
+.cam-error-title { font-size: 1rem; font-weight: 600; color: var(--text-1); }
+.cam-error-msg { font-size: 0.82rem; color: var(--text-3); }
+
+/* upload options row */
+.upload-options {
+  display: flex; gap: 0.8rem; margin-top: 1rem;
+}
+.upload-options .btn { flex: 1; justify-content: center; font-size: 0.85rem; padding: 0.8rem; }
+
+/* hidden canvas for capture */
+#camCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="nav" id="navbar">
+  <div class="container nav-inner">
+    <div class="logo">SkinIQ <span>AI</span></div>
+    <div class="nav-links">
+      <a href="#scan">Scan</a>
+      <a href="#products">Products</a>
+      <a href="#why">Why Us</a>
+      <a href="#reviews">Reviews</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#scan" class="btn btn-primary" style="padding:0.6rem 1.4rem;font-size:0.82rem;">Scan Now</a>
+    </div>
+    <div class="nav-hamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-content">
+      <div class="hero-tag reveal">
+        <span class="tag">Powered by AI</span>
+      </div>
+      <h1 class="hero-heading reveal delay-1">
+        AI-Powered<br><em>Skin</em> <strong>Analysis</strong>
+      </h1>
+      <p class="hero-sub reveal delay-2">
+        Scan your face and get hyper-personalized skincare recommendations in seconds. Science-backed. Precision-crafted.
+      </p>
+      <div class="hero-btns reveal delay-3">
+        <a href="#scan" class="btn btn-primary">
+          <span>✦</span> Scan Your Face
+        </a>
+        <a href="#products" class="btn btn-ghost">
+          Explore Products
+        </a>
+      </div>
+      <div class="hero-stats reveal delay-4">
+        <div>
+          <div class="hero-stat-num">98K+</div>
+          <div class="hero-stat-label">Faces Analyzed</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">4.9★</div>
+          <div class="hero-stat-label">User Rating</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">12s</div>
+          <div class="hero-stat-label">Avg. Scan Time</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual reveal delay-2">
+      <div class="hero-orb">
+        <div class="hero-face-ring">
+          <div class="hero-face-inner">🧴</div>
+        </div>
+      </div>
+      <!-- floating cards -->
+      <div class="hero-float-card">
+        <div class="hfc-label">Hydration</div>
+        <div class="hfc-val">87%</div>
+        <div class="hfc-bar"><div class="hfc-fill" style="width:87%"></div></div>
+      </div>
+      <div class="hero-float-card">
+        <div class="hfc-label">Glow Score</div>
+        <div class="hfc-val">9.2</div>
+        <div class="hfc-bar"><div class="hfc-fill" style="width:92%"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCAN SECTION
+     ============================================================ -->
+<section class="scan-section" id="scan">
+  <div class="container">
+    <div class="scan-header reveal">
+      <span class="tag">AI Face Scanner</span>
+      <div class="section-label" style="margin-top:1rem;">
+        Upload. <em>Analyze.</em> Glow.
+      </div>
+      <p>Our AI reads 27 skin biomarkers in milliseconds to create your personalized skin blueprint.</p>
+    </div>
+
+    <div class="scan-box reveal delay-1">
+      <!-- Upload Zone -->
+      <div class="upload-zone" id="uploadZone"
+           ondragover="handleDrag(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon">🤳</div>
+        <div class="upload-title">Capture or Upload Your Selfie</div>
+        <div class="upload-sub">Position your face clearly · good lighting recommended</div>
+        <div class="upload-options">
+          <button class="btn btn-primary" onclick="openCamera()">
+            <span>📷</span> Use Camera
+          </button>
+          <button class="btn btn-ghost" onclick="document.getElementById('fileInput').click()">
+            <span>🖼️</span> Upload Photo
+          </button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" class="upload-input" accept="image/*" onchange="handleFile(event)" />
+
+      <!-- Preview -->
+      <div class="upload-preview" id="uploadPreview">
+        <img id="previewImg" src="" alt="Preview" />
+        <div class="scan-line" id="scanLine"></div>
+        <div class="scan-corners"></div>
+        <div class="scan-corners scan-corners-br"></div>
+      </div>
+
+      <!-- Scan Button -->
+      <button class="btn btn-primary scan-btn" id="scanBtn" onclick="startScan()" style="display:none;">
+        <span>⚡</span> Analyze My Skin
+      </button>
+
+      <!-- Progress -->
+      <div class="scan-progress" id="scanProgress">
+        <div class="scan-progress-label">
+          <span id="progressLabel">Analyzing Skin...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="scan-progress-bar">
+          <div class="scan-progress-fill" id="progressFill"></div>
+        </div>
+        <div class="scan-steps">
+          <div class="scan-step" id="step1"><div class="step-dot"></div> Detecting face landmarks</div>
+          <div class="scan-step" id="step2"><div class="step-dot"></div> Analyzing skin texture</div>
+          <div class="scan-step" id="step3"><div class="step-dot"></div> Measuring hydration levels</div>
+          <div class="scan-step" id="step4"><div class="step-dot"></div> Generating AI report</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     REPORT SECTION
+     ============================================================ -->
+<section class="report-section" id="reportSection">
+  <div class="container">
+    <div class="report-header reveal">
+      <span class="tag">✦ Your Skin Report</span>
+      <div class="section-label" style="margin-top:1rem;">
+        AI <em>Analysis</em> Complete
+      </div>
+    </div>
+
+    <div class="report-grid">
+
+      <div class="report-card reveal delay-1">
+        <div class="rc-icon">🧬</div>
+        <div class="rc-label">Skin Type</div>
+        <div class="rc-value">Combination</div>
+        <div class="rc-desc">Oily T-zone with dry cheeks. Needs balanced care.</div>
+      </div>
+
+      <div class="report-card reveal delay-2">
+        <div class="rc-icon">🌊</div>
+        <div class="rc-label">Hydration Level</div>
+        <div class="rc-value">72%</div>
+        <div class="rc-bar-wrap">
+          <div class="rc-bar-label"><span>Dry</span><span>Optimal</span></div>
+          <div class="rc-bar"><div class="rc-bar-fill blue" data-width="72"></div></div>
+        </div>
+      </div>
+
+      <div class="report-card glow-score-card reveal delay-3">
+        <div class="rc-label">Glow Score</div>
+        <div class="glow-num">8.4</div>
+        <div class="rc-desc">Above average luminosity. You're glowing!</div>
+      </div>
+
+      <div class="report-card span-2 reveal delay-1">
+        <div class="rc-icon">🔍</div>
+        <div class="rc-label">Acne Level</div>
+        <div class="rc-value" style="color:#c0504d;">Mild</div>
+        <div class="rc-bar-wrap">
+          <div class="rc-bar-label"><span>Clear</span><span>Severe</span></div>
+          <div class="rc-bar"><div class="rc-bar-fill red" data-width="28"></div></div>
+        </div>
+        <div class="rc-desc" style="margin-top:0.8rem;">2-3 active spots detected near chin and forehead. Manageable with targeted treatment.</div>
+      </div>
+
+      <div class="report-card reveal delay-2">
+        <div class="rc-icon">☀️</div>
+        <div class="rc-label">Sun Damage</div>
+        <div class="rc-value">Low</div>
+        <div class="rc-bar-wrap">
+          <div class="rc-bar-label"><span>None</span><span>High</span></div>
+          <div class="rc-bar"><div class="rc-bar-fill green" data-width="18"></div></div>
+        </div>
+      </div>
+
+      <div class="report-card reveal delay-1">
+        <div class="rc-icon">🎯</div>
+        <div class="rc-label">Pore Visibility</div>
+        <div class="rc-value">Medium</div>
+        <div class="rc-bar-wrap">
+          <div class="rc-bar"><div class="rc-bar-fill" data-width="52"></div></div>
+        </div>
+      </div>
+
+      <div class="report-card span-2 reveal delay-2">
+        <div class="rc-icon">✨</div>
+        <div class="rc-label">Skin Age vs Actual</div>
+        <div class="rc-value" style="color:#4caf7d;">2 yrs younger</div>
+        <div class="rc-desc">Your skin appears 2 years younger than your biological age. Excellent anti-aging indicators.</div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;" class="reveal">
+      <a href="#products" class="btn btn-primary">
+        <span>✦</span> See My Recommendations
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PRODUCTS SECTION
+     ============================================================ -->
+<section class="products-section" id="products">
+  <div class="container">
+    <div class="products-header reveal">
+      <span class="tag">Curated For You</span>
+      <div class="section-label" style="margin-top:1rem;">
+        Your <em>Personalized</em> Routine
+      </div>
+      <p>AI-matched skincare crafted specifically for your unique skin profile.</p>
+    </div>
+
+    <div class="products-grid">
+
+      <div class="product-card reveal delay-1">
+        <div class="product-img product-img-1">
+          <span class="product-badge">Step 1</span>
+          🫧
+        </div>
+        <div class="product-body">
+          <div class="product-name">SkinIQ Gentle Foaming Facewash</div>
+          <div class="product-desc">Salicylic acid & green tea formula that cleanses without stripping.</div>
+          <div class="product-benefits">
+            <span class="benefit-pill">Anti-acne</span>
+            <span class="benefit-pill">pH balanced</span>
+            <span class="benefit-pill">Sulfate-free</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">₹649</div>
+            <button class="product-buy">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-card reveal delay-2">
+        <div class="product-img product-img-2">
+          <span class="product-badge">Step 2</span>
+          🌞
+        </div>
+        <div class="product-body">
+          <div class="product-name">SkinIQ AquaShield SPF 60</div>
+          <div class="product-desc">Lightweight, invisible sunscreen with blue-light defense & antioxidants.</div>
+          <div class="product-benefits">
+            <span class="benefit-pill">SPF 60+</span>
+            <span class="benefit-pill">PA++++</span>
+            <span class="benefit-pill">No white cast</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">₹849</div>
+            <button class="product-buy">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-card reveal delay-3">
+        <div class="product-img product-img-3">
+          <span class="product-badge">Step 3</span>
+          💧
+        </div>
+        <div class="product-body">
+          <div class="product-name">SkinIQ HydraBalm Moisturizer</div>
+          <div class="product-desc">72-hour hydration lock with hyaluronic acid & ceramides complex.</div>
+          <div class="product-benefits">
+            <span class="benefit-pill">Non-greasy</span>
+            <span class="benefit-pill">Plumping</span>
+            <span class="benefit-pill">Barrier repair</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">₹749</div>
+            <button class="product-buy">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-card reveal delay-4">
+        <div class="product-img product-img-4">
+          <span class="product-badge">Boost</span>
+          ✨
+        </div>
+        <div class="product-body">
+          <div class="product-name">SkinIQ Niacinamide Glow Serum</div>
+          <div class="product-desc">10% Niacinamide + Zinc formula that minimizes pores & evens tone.</div>
+          <div class="product-benefits">
+            <span class="benefit-pill">Pore refining</span>
+            <span class="benefit-pill">Brightening</span>
+            <span class="benefit-pill">Oil control</span>
+          </div>
+          <div class="product-footer">
+            <div class="product-price">₹999</div>
+            <button class="product-buy">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     WHY CHOOSE US
+     ============================================================ -->
+<section class="why-section" id="why">
+  <div class="container">
+    <div class="why-header reveal">
+      <span class="tag">Why SkinIQ</span>
+      <div class="section-label" style="margin-top:1rem;">
+        Built Different. <em>Built Better.</em>
+      </div>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card reveal delay-1">
+        <div class="why-icon">🧠</div>
+        <div class="why-title">AI-Powered Analysis</div>
+        <div class="why-desc">Our proprietary vision model analyzes 27 distinct skin biomarkers — from micro-texture to pigmentation depth — with 96.4% accuracy.</div>
+      </div>
+      <div class="why-card reveal delay-2">
+        <div class="why-icon">🎯</div>
+        <div class="why-title">Hyper-Personalized</div>
+        <div class="why-desc">No more guesswork. Every product recommendation is calibrated to your exact skin DNA, climate, and lifestyle data.</div>
+      </div>
+      <div class="why-card reveal delay-3">
+        <div class="why-icon">⚡</div>
+        <div class="why-title">Results in 12 Seconds</div>
+        <div class="why-desc">What dermatologists take 45 minutes to assess, our AI does in under 12 seconds — without any appointment or waiting room.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     TESTIMONIALS
+     ============================================================ -->
+<section class="testi-section" id="reviews">
+  <div class="container">
+    <div class="testi-header reveal">
+      <span class="tag">Loved by Thousands</span>
+      <div class="section-label" style="margin-top:1rem;">
+        Real People. <em>Real Glow.</em>
+      </div>
+    </div>
+
+    <div class="testi-grid">
+      <div class="testi-card reveal delay-1">
+        <div class="testi-stars">⭐⭐⭐⭐⭐</div>
+        <div class="testi-text">"I've visited dermatologists for years and never got this level of detail. SkinIQ AI told me my skin was dehydrated before I even felt it. The serum it recommended changed everything."</div>
+        <div class="testi-user">
+          <div class="testi-avatar" style="background:#1a1508;">👩</div>
+          <div>
+            <div class="testi-name">Riya Sharma</div>
+            <div class="testi-meta">Mumbai · Combination Skin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card reveal delay-2">
+        <div class="testi-stars">⭐⭐⭐⭐⭐</div>
+        <div class="testi-text">"The scan detected mild sun damage I didn't even know I had. Two months with the AquaShield SPF and my skin tone is visibly more even. This is the future of skincare."</div>
+        <div class="testi-user">
+          <div class="testi-avatar" style="background:#08131a;">👨</div>
+          <div>
+            <div class="testi-name">Arjun Mehta</div>
+            <div class="testi-meta">Delhi · Oily Skin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card reveal delay-3">
+        <div class="testi-stars">⭐⭐⭐⭐⭐</div>
+        <div class="testi-text">"As someone who's always bought random products off Instagram, SkinIQ finally gave me a routine that actually WORKS. My glow score went from 6.1 to 8.8 in 6 weeks."</div>
+        <div class="testi-user">
+          <div class="testi-avatar" style="background:#0f1a0f;">👩</div>
+          <div>
+            <div class="testi-name">Priya Nair</div>
+            <div class="testi-meta">Bangalore · Dry Skin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="logo">SkinIQ <span>AI</span></div>
+        <div class="footer-tagline" style="margin-top:0.8rem;">
+          Science-backed skincare powered by AI. Your skin deserves intelligence.
+        </div>
+        <div class="footer-socials">
+          <div class="social-btn">𝕏</div>
+          <div class="social-btn">in</div>
+          <div class="social-btn">📸</div>
+          <div class="social-btn">▶</div>
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Product</div>
+        <a href="#scan">AI Scanner</a>
+        <a href="#products">Skincare</a>
+        <a href="#why">Technology</a>
+        <a href="#">Pricing</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Company</div>
+        <a href="#">About Us</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Legal</div>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Cookie Policy</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2025 SkinIQ AI. All rights reserved.</div>
+      <div>Made with ✦ for glowing skin</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     CAMERA MODAL
+     ============================================================ -->
+<div class="cam-modal-overlay" id="camModal">
+  <div class="cam-modal">
+    <!-- Header -->
+    <div class="cam-header">
+      <div class="cam-title">✦ Live Skin Scanner</div>
+      <div class="cam-close" onclick="closeCamera()">✕</div>
+    </div>
+
+    <!-- Viewport -->
+    <div class="cam-viewport" id="camViewport">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <canvas id="camCanvas"></canvas>
+
+      <!-- Face guide oval -->
+      <div class="cam-face-guide">
+        <div class="cam-oval"></div>
+      </div>
+
+      <!-- Corner brackets -->
+      <div class="cam-corners-wrap">
+        <div class="cam-corner tl"></div>
+        <div class="cam-corner tr"></div>
+        <div class="cam-corner bl"></div>
+        <div class="cam-corner br"></div>
+      </div>
+
+      <!-- Scan line (shown after capture) -->
+      <div class="cam-scan-line" id="camScanLine"></div>
+
+      <!-- Countdown -->
+      <div class="cam-countdown" id="camCountdown"></div>
+
+      <!-- Flash -->
+      <div class="cam-flash" id="camFlash"></div>
+
+      <!-- Error state -->
+      <div class="cam-error" id="camError">
+        <div class="cam-error-icon">🚫</div>
+        <div class="cam-error-title">Camera Access Denied</div>
+        <div class="cam-error-msg">Please allow camera permission in your browser settings, then refresh the page.</div>
+        <button class="btn btn-ghost" style="margin-top:0.5rem;font-size:0.82rem;" onclick="retryCamera()">Try Again</button>
+      </div>
+    </div>
+
+    <!-- Tip bar -->
+    <div class="cam-tip" id="camTip">Centre your face inside the oval · ensure good lighting</div>
+
+    <!-- Controls -->
+    <div class="cam-controls">
+      <!-- Flip camera -->
+      <div class="cam-btn-flip" id="flipBtn" onclick="flipCamera()" title="Flip Camera">🔄</div>
+
+      <!-- Capture -->
+      <div class="cam-capture-ring" onclick="capturePhoto()">
+        <div class="cam-capture-dot"></div>
+      </div>
+
+      <!-- Timer toggle -->
+      <div class="cam-btn-timer" id="timerBtn" onclick="toggleTimer()" title="Self Timer">
+        ⏱
+        <span id="timerLabel">Off</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ── NAVBAR scroll ── */
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+function toggleMenu() {
+  const links = document.querySelector('.nav-links');
+  if (links.style.display === 'flex') {
+    links.style.display = 'none';
+  } else {
+    links.style.display = 'flex';
+    links.style.flexDirection = 'column';
+    links.style.position = 'absolute';
+    links.style.top = '70px';
+    links.style.left = '0';
+    links.style.right = '0';
+    links.style.background = 'rgba(10,10,11,0.97)';
+    links.style.padding = '1.5rem';
+    links.style.borderBottom = '1px solid rgba(255,255,255,0.07)';
+  }
+}
+
+/* ── SCROLL REVEAL ── */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      e.target.querySelectorAll('.rc-bar-fill[data-width]').forEach(bar => {
+        setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 200);
+      });
+    }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── FILE UPLOAD ── */
+function handleDrag(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+function handleDragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault(); handleDragLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processFile(file);
+}
+function handleFile(e) { const file = e.target.files[0]; if (file) processFile(file); }
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    showPreview(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showPreview(dataUrl) {
+  document.getElementById('previewImg').src = dataUrl;
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('uploadPreview').style.display = 'block';
+  document.getElementById('scanBtn').style.display = 'flex';
+}
+
+/* ============================================================
+   CAMERA MODULE
+   ============================================================ */
+let camStream = null;
+let facingMode = 'user';   // 'user' = front, 'environment' = back
+let timerSeconds = 0;       // 0 = off, 3 = 3s, 5 = 5s
+let countdownInterval = null;
+
+function openCamera() {
+  const modal = document.getElementById('camModal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  startStream();
+}
+
+function closeCamera() {
+  stopStream();
+  document.getElementById('camModal').classList.remove('open');
+  document.body.style.overflow = '';
+  clearCountdown();
+}
+
+// Close on overlay click
+document.getElementById('camModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCamera();
+});
+
+// ESC key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCamera(); });
+
+async function startStream() {
+  stopStream();
+  hideError();
+  document.getElementById('camVideo').style.display = 'block';
+
+  const constraints = {
+    video: {
+      facingMode: facingMode,
+      width: { ideal: 1280 },
+      height: { ideal: 960 }
+    },
+    audio: false
+  };
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('camVideo');
+    video.srcObject = camStream;
+    // mirror only for front camera
+    video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    setTip('Centre your face inside the oval · ensure good lighting', '');
+  } catch(err) {
+    showError();
+  }
+}
+
+function stopStream() {
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+}
+
+function showError() {
+  document.getElementById('camVideo').style.display = 'none';
+  document.getElementById('camError').style.display = 'flex';
+  document.querySelector('.cam-face-guide').style.display = 'none';
+  document.querySelector('.cam-controls').style.display = 'none';
+}
+
+function hideError() {
+  document.getElementById('camError').style.display = 'none';
+  document.querySelector('.cam-face-guide').style.display = 'flex';
+  document.querySelector('.cam-controls').style.display = 'flex';
+}
+
+function retryCamera() { startStream(); }
+
+/* ── Flip Camera ── */
+async function flipCamera() {
+  facingMode = facingMode === 'user' ? 'environment' : 'user';
+  const flipBtn = document.getElementById('flipBtn');
+  flipBtn.style.transform = 'rotate(180deg)';
+  setTimeout(() => flipBtn.style.transform = '', 400);
+  await startStream();
+}
+
+/* ── Timer Toggle ── */
+function toggleTimer() {
+  const options = [0, 3, 5];
+  const labels  = ['Off', '3s', '5s'];
+  const btn = document.getElementById('timerBtn');
+  const label = document.getElementById('timerLabel');
+  const curIdx = options.indexOf(timerSeconds);
+  const next = (curIdx + 1) % options.length;
+  timerSeconds = options[next];
+  label.textContent = labels[next];
+  btn.classList.toggle('active', timerSeconds > 0);
+}
+
+/* ── Capture ── */
+function capturePhoto() {
+  if (!camStream) return;
+  clearCountdown();
+
+  if (timerSeconds > 0) {
+    runCountdown(timerSeconds, doCapture);
+  } else {
+    doCapture();
+  }
+}
+
+function runCountdown(secs, cb) {
+  const el = document.getElementById('camCountdown');
+  let remaining = secs;
+
+  const show = () => {
+    el.textContent = remaining;
+    el.style.display = 'flex';
+    el.style.animation = 'none';
+    void el.offsetWidth; // reflow
+    el.style.animation = 'count-pop 1s ease-in-out';
+  };
+
+  show();
+  setTip('Get ready!', 'warn');
+
+  countdownInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearCountdown();
+      cb();
+    } else {
+      show();
+    }
+  }, 1000);
+}
+
+function clearCountdown() {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  const el = document.getElementById('camCountdown');
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
+
+function doCapture() {
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('camCanvas');
+  const flash  = document.getElementById('camFlash');
+
+  // Flash
+  flash.classList.add('flash');
+  setTimeout(() => flash.classList.remove('flash'), 150);
+
+  // Draw frame to canvas
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+
+  // Mirror front camera captured image to match what user sees
+  if (facingMode === 'user') {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  // Show scanning effect on live view for a beat, then close + show preview
+  document.getElementById('camScanLine').style.display = 'block';
+  setTip('✓ Captured! Preparing analysis...', 'good');
+
+  setTimeout(() => {
+    closeCamera();
+    showPreview(dataUrl);
+  }, 900);
+}
+
+function setTip(text, cls) {
+  const tip = document.getElementById('camTip');
+  tip.textContent = text;
+  tip.className = 'cam-tip ' + (cls || '');
+}
+
+/* ── SCAN ANIMATION ── */
+function startScan() {
+  document.getElementById('scanBtn').style.display = 'none';
+  document.getElementById('scanLine').style.display = 'block';
+  document.getElementById('scanProgress').style.display = 'block';
+
+  const steps = ['step1','step2','step3','step4'];
+  const labels = [
+    'Detecting face landmarks...',
+    'Analyzing skin texture...',
+    'Measuring biomarkers...',
+    'Generating AI Report...'
+  ];
+  const targets = [25, 52, 78, 100];
+  let currentStep = 0;
+  let currentPct = 0;
+
+  const fill    = document.getElementById('progressFill');
+  const pctEl   = document.getElementById('progressPct');
+  const labelEl = document.getElementById('progressLabel');
+
+  activateStep(0);
+
+  const interval = setInterval(() => {
+    currentPct++;
+    fill.style.width = currentPct + '%';
+    pctEl.textContent = currentPct + '%';
+
+    if (currentPct >= targets[currentStep]) {
+      document.getElementById(steps[currentStep]).classList.remove('active');
+      document.getElementById(steps[currentStep]).classList.add('done');
+      currentStep++;
+      if (currentStep < steps.length) {
+        labelEl.textContent = labels[currentStep];
+        activateStep(currentStep);
+      }
+    }
+
+    if (currentPct >= 100) {
+      clearInterval(interval);
+      document.getElementById('scanLine').style.display = 'none';
+      setTimeout(showReport, 600);
+    }
+  }, 28);
+}
+
+function activateStep(i) {
+  const steps = ['step1','step2','step3','step4'];
+  const el = document.getElementById(steps[i]);
+  if (el) el.classList.add('active');
+}
+
+function showReport() {
+  const reportSection = document.getElementById('reportSection');
+  reportSection.classList.add('visible-section');
+  reportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  setTimeout(() => {
+    reportSection.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    setTimeout(() => {
+      reportSection.querySelectorAll('.rc-bar-fill[data-width]').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }, 400);
+  }, 300);
+}
+
+/* ── smooth scroll ── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+
+/* ── buy button feedback ── */
+document.querySelectorAll('.product-buy').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const orig = btn.textContent;
+    btn.textContent = '✓ Added!';
+    btn.style.background = '#4caf7d';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1800);
+  });
+});
+</script>
+</body>
+</html>
